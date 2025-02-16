@@ -1,0 +1,71 @@
+import streamlit as st
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import r2_score, mean_absolute_error, mean_squared_error
+from sklearn.ensemble import BaggingRegressor, RandomForestRegressor, GradientBoostingRegressor, AdaBoostRegressor
+from catboost import CatBoostRegressor
+
+st.set_page_config(page_title="Prediksi Total Pembiayaan Syariah", layout="wide")
+st.title("Aplikasi Web Prediksi Total Pembiayaan Perbankan Syariah")
+
+st.markdown("Unggah dataset CSV Anda untuk memprediksi total pembiayaan menggunakan berbagai model ensemble.")
+
+# Perbaikan untuk menghindari warning
+import contextlib
+import warnings
+
+with contextlib.suppress(warnings.catch_warnings()):
+    warnings.filterwarnings("ignore", category=UserWarning)
+
+# Upload dataset
+df = st.file_uploader("Upload file CSV", type=["csv"])
+
+if df is not None:
+    df = pd.read_csv(df)
+    st.write("### Data yang diunggah:")
+    st.write(df.head())
+
+    X = df.drop(columns=['Total Pembiayaan Rp (y)'])
+    y = df['Total Pembiayaan Rp (y)']
+    train_X, test_X, train_y, test_y = train_test_split(X, y, test_size=0.2, random_state=23)
+
+    model_choice = st.selectbox("Pilih Model Ensemble", ["Bagging Regressor", "Random Forest Regressor", "Gradient Boosting Regressor", "AdaBoost Regressor", "CatBoost Regressor"])
+
+    models = {
+        "Bagging Regressor": BaggingRegressor(n_estimators=10, random_state=42),
+        "Random Forest Regressor": RandomForestRegressor(n_estimators=100, random_state=42),
+        "Gradient Boosting Regressor": GradientBoostingRegressor(n_estimators=100, learning_rate=0.1, random_state=42),
+        "AdaBoost Regressor": AdaBoostRegressor(n_estimators=300, learning_rate=0.05, random_state=100),
+        "CatBoost Regressor": CatBoostRegressor(iterations=500, depth=10, learning_rate=0.05, random_seed=23, verbose=0)
+    }
+
+    model = models[model_choice]
+    model.fit(train_X, train_y)
+    pred_y = model.predict(test_X)
+
+    r2 = r2_score(test_y, pred_y)
+    mae = mean_absolute_error(test_y, pred_y)
+    mse = mean_squared_error(test_y, pred_y)
+    rmse = np.sqrt(mse)
+
+    st.subheader("Evaluasi Model")
+    st.write(f"R² Score: {r2:.4f}")
+    st.write(f"MAE: {mae:,.2f}")
+    st.write(f"MSE: {mse:,.2f}")
+    st.write(f"RMSE: {rmse:,.2f}")
+
+    result_df = pd.DataFrame({"Actual": test_y.values, "Predicted": pred_y})
+    st.write("### Hasil Prediksi (5 sampel pertama):")
+    st.write(result_df.head())
+
+    fig, ax = plt.subplots()
+    ax.scatter(test_y, pred_y, alpha=0.7, color="blue")
+    ax.plot([test_y.min(), test_y.max()], [test_y.min(), test_y.max()], '--r', linewidth=2)
+    ax.set_xlabel("Nilai Aktual")
+    ax.set_ylabel("Nilai Prediksi")
+    ax.set_title(f"Perbandingan Aktual vs Prediksi ({model_choice})")
+    st.pyplot(fig)
+
+    st.success("Prediksi selesai! Anda dapat mengganti model dan melihat hasilnya.")
