@@ -12,13 +12,6 @@ st.title("Aplikasi Web Prediksi Total Pembiayaan Perbankan Syariah")
 
 st.markdown("Unggah dataset CSV Anda untuk memprediksi total pembiayaan menggunakan berbagai model ensemble.")
 
-# Perbaikan untuk menghindari warning
-import contextlib
-import warnings
-
-with contextlib.suppress(warnings.catch_warnings()):
-    warnings.filterwarnings("ignore", category=UserWarning)
-
 # Upload dataset
 df = st.file_uploader("Upload file CSV", type=["csv"])
 
@@ -68,4 +61,4 @@ if df is not None:
     ax.set_title(f"Perbandingan Aktual vs Prediksi ({model_choice})")
     st.pyplot(fig)
 
-    st.success("Prediksi selesai! Anda dapat mengganti model dan melihat hasilnya.")
+    st.success("Aplikasi Streamlit siap dijalankan! Jalankan dengan `streamlit run nama_file.py` atau deploy di Streamlit Cloud.")
